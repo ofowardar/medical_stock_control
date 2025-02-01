@@ -1,0 +1,325 @@
+#include <iostream>
+#include <fstream>
+#include <string>
+using namespace std;
+
+fstream medsfile;
+fstream usersfile;
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+void kullaniciEkle()
+{
+	string kullaniciAdı;
+	string kullaniciParolasi;
+
+	cout << "Kayıt Olma Bölümüne Hoşgeldiniz"<<endl;
+	cout << "Lütfen Kullanmak istediğiniz Kullanıcı Adını Giriniz: ";
+	cin >> kullaniciAdı;
+	
+	cout << "Lütfen Kullanmak İstediğiniz Parolayı Giriniz: ";
+	cin >> kullaniciParolasi;
+	
+
+	usersfile.open("kullanicilar.txt", ios::out | ios::app);
+	if (usersfile.is_open())
+	{
+		string kayitlar;
+		kayitlar = kullaniciAdı + ";" + kullaniciParolasi;
+		usersfile << kayitlar << endl;
+		
+		cout << "Kayıt İşlemi Başarıyla Tamamlandı"<<endl;
+		usersfile.close();
+
+	}
+}
+////////////////////////////////////////////////////////////////////////////////////////////////////
+void ilacEkle() {
+	medsfile.open("ilaclar.txt", ios::in);
+
+	if (medsfile.is_open()) {
+		string ilacAdi;
+		int ilacAdedi;
+		int ilacFiyati;
+
+		cout << "İlaç Adını Giriniz: " << endl;
+		cin >> ilacAdi;
+
+		// Dosyada ilaç kontrolü
+		string line;
+		while (getline(medsfile, line)) {
+			if (line.find(ilacAdi + ";") != string::npos) {
+				cout << "Girdiğiniz ilaç zaten mevcut. Bilgileri güncellemek ister misiniz? (E/H)" << endl;
+				char cevap;
+				cin >> cevap;
+
+				if (cevap == 'E' || cevap == 'e') {
+					// İlaç bilgilerini güncellemek için eğer aynı isimde bir ilaç varsa
+					
+
+					cout << "İlaç başarıyla güncellendi." << endl;
+					medsfile.close();
+					return;
+				}
+				else {
+					cout << "İşlem iptal edildi." << endl;
+					medsfile.close();
+					return;
+				}
+			}
+		}
+
+		medsfile.close(); 
+
+		cout << "Lütfen İlaç Adedini Giriniz: ";
+		cin >> ilacAdedi;
+
+		cout << "Lütfen İlaç Fiyatını Giriniz: ";
+		cin >> ilacFiyati;
+
+		medsfile.open("ilaclar.txt", ios::out | ios::app);
+
+		string ilacAdedi_str = to_string(ilacAdedi);
+		string ilacFiyati_str = to_string(ilacFiyati);
+		string kayitekle = ilacAdi + ";" + ilacAdedi_str + ";" + ilacFiyati_str;
+
+		medsfile << kayitekle << endl;
+		cout << "İlaç Stoğa Giriliyor..." << endl;
+		medsfile.close();
+		cout << "İlaç Başarıyla Stoğa Eklenmiştir"<<endl;
+	}
+	else {
+		cout << "Dosya Açılamadı !!" << endl;
+	}
+}
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+void ilacSil() {
+	string ilacAdi;
+	cout << "Lütfen Silmek İstediğiniz İlacın Adını Giriniz: " << endl;
+	cin >> ilacAdi;
+	// TİMESLEEP
+	cout << "Seçtiğiniz İlaç Stokta Aranıyor" << endl;
+	// TİMESLEEP
+	ifstream eskidosya("ilaclar.txt");
+	ofstream yenidosya("temp.txt");
+
+	if (!eskidosya.is_open() || !yenidosya.is_open()) {
+		cout << "Dosya Açılamadı!" << endl;
+		return;
+	}
+
+	string line;
+	bool bulunduMu = false;
+
+	while (getline(eskidosya, line)) {
+
+		size_t foundPos = line.find(ilacAdi + ";");
+		if (foundPos != string::npos && (foundPos == 0 || line[foundPos - 1] == ';')) {
+			bulunduMu = true;
+			cout << "Girdiğiniz İlaç Stokta Bulundu"<<endl;
+		}
+		else {
+			yenidosya << line << endl;
+		}
+	}
+
+	eskidosya.close();
+	yenidosya.close();
+
+	remove("ilaclar.txt");     // Orijinal dosyayı sil
+	rename("temp.txt", "ilaclar.txt");  // Temp dosyasını orijinal dosya adına yeniden adlandır
+
+	if (bulunduMu) {
+		cout << "İlaç başarıyla silindi." << endl;
+	}
+	else {
+		cout << "İlaç bulunamadı." << endl;
+	}
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void ilaclariListele()
+{
+	string kayitlar;
+
+	medsfile.open("ilaclar.txt", ios::in);
+	if (!medsfile.is_open()) {
+		cout << "Dosya Açılırken Bir Hata İle Karşılaşıldı.." << endl;
+		return;
+	}
+
+	cout << "İlaçlar Listeleniyor..." << endl;
+	cout << "**********************************************" << endl;
+
+	medsfile.seekg(0, ios::beg);
+
+	while (getline(medsfile, kayitlar))
+	{
+		cout << kayitlar << endl;
+		cout << "------------------------------------" << endl;
+	}
+
+	medsfile.close();
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+bool kullaniciKontrol(string kullaniciAdi,string sifre) {
+	usersfile.open("kullanicilar.txt", ios::in);
+	if (!usersfile.is_open()) {
+		cout << "Dosya Açılamadı!" << endl;
+		return false;
+	}
+	cout << "Kontrol Sağlanıyor...";
+	//TİMESLEEP
+	string satir;
+	while (getline(usersfile, satir)) {
+		size_t pos = satir.find(kullaniciAdi + ";" + sifre);
+		if (pos != string::npos) {
+			usersfile.close();
+			cout << "Eşleşme Sağlandı !!" << endl;
+			return true;
+		}
+	}
+
+	usersfile.close();
+	return false;
+}
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+void ilacSorgula()
+{
+	string ilacadi;
+	cout << "Lütfen Sorgulamak İstediğiniz İlacın Adını Giriniz: ";
+	cin >> ilacadi;
+
+	cout << "İlaç Stokta Aranıyor..."<<endl;
+	cout << "**********************************************" << endl;
+
+	medsfile.open("ilaclar.txt", ios::in);
+	if (!medsfile.is_open()) {
+		cout << "Dosya Açılamadı!" << endl;
+	}
+	else
+	{
+		string satir;
+		while (getline(medsfile, satir)) {
+			if (satir.find(ilacadi + ";") != string::npos) {
+				cout << satir << endl;  
+				cout << "**********************************************" << endl;
+			}
+		}
+		medsfile.close();  // Dosyayı döngünün dışında kapat
+	}
+}
+
+/// /////////////////////////////////////////////////////////////////////////////////////////////////////////7
+
+
+int main()
+{
+	setlocale(LC_ALL, "Turkish");
+	// Kullanıcı Girişi 
+	
+	string kullaniciadi;
+	string sifre;
+	bool isLogined = false;
+	bool isAdmin = false;
+	int kontrol;
+
+	cout << "Kullanıcı Girişi İçin 1'i " << endl << "Kaydolmak İçin 2 Rakamını Giriniz: ";
+	cin >> kontrol;
+
+	if (kontrol == 1) {
+		do {
+			cout << "Hoşgeldiniz Lütfen Giriş Yapınız.." << endl;
+			cout << "Kullanıcı Adı: ";
+			cin >> kullaniciadi;
+			//TİMESLEEP
+			cout << "Parola: ";
+			cin >> sifre;
+			//TİMESLEEP
+		} while (!kullaniciKontrol(kullaniciadi, sifre));
+		cout << "Başarıyla Giriş Yapıldı ! " << endl <<"**********************************************" << endl<< "Hoşgeldiniz " << kullaniciadi << endl;
+		isLogined = true;
+	}
+
+	else if (kontrol == 2) {
+		kullaniciEkle(); // Yeni bir kullanıcı ekler
+		cout << "Başarıyla Kaydoldunuz! Lütfen Giriş Yapınız.." << endl;
+
+		// Yeni kullanıcının bilgilerini tekrar girmesine gerek yok
+		do {
+			cout << "Hoşgeldiniz Lütfen Giriş Yapınız.." << endl;
+			cout << "Kullanıcı Adı: ";
+			cin >> kullaniciadi;
+			cout << "Parola: ";
+			cin >> sifre;
+		} while (!kullaniciKontrol(kullaniciadi, sifre));
+
+		cout << "Başarıyla Giriş Yapıldı ! " << endl << "Hoşgeldiniz " << kullaniciadi << endl;
+		isLogined = true;
+	}
+
+	
+	if (isLogined)
+	{
+
+		while (isLogined)
+		{
+			int secim;
+			cout << "Lütfen yapmak istediğiniz işlemi giriniz:\n1-İlaç Sorgula\n2-İlaç Ekle\n3-İlaç Sil\n4-Tüm Stoğu Listele\n5-Kullanıcı Ekle\n6-Çıkış" << endl;
+			cin >> secim;
+			switch (secim)
+			{
+			case 1:
+				ilacSorgula();
+				break;
+			case 2:
+				ilacEkle();
+				break;
+			case 3:
+				ilacSil();
+				break;
+			case 4:
+				ilaclariListele();
+				break;
+			case 5:
+				kullaniciEkle();
+				break;
+			case 6:
+				break;
+			default:
+				cout << "Lütfen Doğru Bir Tuşlama Yapınız!!!";
+
+			}
+			if (secim == 6) {
+				break;
+			}
+
+			if (secim == 6)
+				break;
+
+
+		}
+
+
+	}
+	else
+	{
+		cout << "İşlem Gerçekleştirmek İçin Giriş Yapılmalıdır.";
+	}
+	
+	
+	
+	
+	
+	
+	
+	return 0;
+
+
+}
+
